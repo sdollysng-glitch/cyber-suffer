@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cyber Surfer 3D - VR Studio</title>
+    
+    <!-- Embedded Web App Manifest -->
+    <link rel="manifest" href="data:application/manifest+json;utf8,{
+        %22short_name%22:%22CyberSurfer%22,
+        %22name%22:%22Cyber%20Surfer%203D%20-%20VR%20Studio%22,
+        %22start_url%22:%22./index.html%22,
+        %22background_color%22:%22%2305050a%22,
+        %22theme_color%22:%22%2300f0ff%22,
+        %22display%22:%22standalone%22,
+        %22orientation%22:%22portrait%22
+    }">
+    <meta name="theme-color" content="#00f0ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #05050a;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #fff;
+        }
+
+        /* 1. VR Studio Splash Screen */
+        #landing-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #111125 0%, #05050a 100%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .company-title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            color: #fff;
+            text-shadow: 0 0 15px #00f0ff, 0 0 30px #00f0ff;
+            margin-bottom: 5px;
+        }
+
+        .company-subtitle {
+            font-size: 1rem;
+            color: #a0a0d0;
+            letter-spacing: 5px;
+            margin-bottom: 30px;
+        }
+
+        /* Logo Shield Frame */
+        .logo-box {
+            width: 140px;
+            height: 160px;
+            border: 3px solid #00f0ff;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
+            margin-bottom: 40px;
+            background: rgba(10, 10, 30, 0.8);
+        }
+
+        .logo-box h1 {
+            font-size: 2.8rem;
+            color: #ff007f;
+            text-shadow: 0 0 15px #ff007f;
+        }
+
+        .logo-box p {
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            color: #00f0ff;
+        }
+
+        /* Download APK Button */
+        .download-btn {
+            background: linear-gradient(135deg, #00f0ff, #7900ff);
+            border: none;
+            color: #fff;
+            padding: 16px 32px;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+            cursor: pointer;
+            margin-bottom: 15px;
+            text-decoration: none;
+        }
+
+        .download-btn:active {
+            transform: scale(0.95);
+        }
+
+        .down-arrow {
+            font-size: 1.4rem;
+            animation: bounce 1.5s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(6px); }
+        }
+
+        .play-web-btn {
+            background: transparent;
+            border: 2px solid #ff007f;
+            color: #ff007f;
+            padding: 10px 24px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* 2. 3D Game Engine Canvas & Overlay */
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-shadow: 0 0 10px #00f0ff;
+        }
+    </style>
+
+    <!-- 3D Graphics Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <!-- VR Studio Splash Screen -->
+    <div id="landing-screen">
+        <div class="company-title">WELCOME TO</div>
+        <div class="company-subtitle">VR STUDIO</div>
+
+        <div class="logo-box">
+            <h1>VR</h1>
+            <p>STUDIO</p>
+        </div>
+
+        <a id="download-apk-link" href="#" class="download-btn" onclick="triggerDownload(event)">
+            <span class="down-arrow">&#129147;</span> DOWNLOAD APK / INSTALL
+        </a>
+
+        <button class="play-web-btn" onclick="startGameDirectly()">PLAY IN BROWSER NOW</button>
+    </div>
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- In-Game Mobile Overlay HUD -->
+    <div id="ui-layer">
+        <div class="hud-top">
+            <div id="score-display">SCORE: 0</div>
+            <div id="orb-display">COINS: 0</div>
+        </div>
+    </div>
+
+    <script>
+        // APK / Mobile Installation Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        function triggerDownload(e) {
+            e.preventDefault();
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User installed the game app');
+                    }
+                    deferredPrompt = null;
+                });
+            } else {
+                alert("To download as an app: Open browser options (3 dots) and tap 'Add to Home Screen' or 'Install App'.");
+            }
+        }
+
+        function startGameDirectly() {
+            document.getElementById('landing-screen').style.display = 'none';
+            document.getElementById('ui-layer').style.display = 'flex';
+            initGameEngine();
+        }
+
+        // 3D Game Setup & Scene Mechanics
+        let scene, camera, renderer, playerGroup, track;
+        let touchStartX = 0, touchEndX = 0;
+        let currentLane = 0; // -1: Left, 0: Center, 1: Right
+
+        function initGameEngine() {
+            const container = document.getElementById('canvas-container');
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050510);
+            scene.fog = new THREE.FogExp2(0x050510, 0.02);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 2.5, 5);
+            camera.lookAt(0, 1, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0x00ffff, 0.9);
+            dirLight.position.set(5, 10, 7);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            // Construct 3D Among Us Crewmate
+            buildAmongUsCrewmate();
+
+            // Ground Track
+            const trackGeo = new THREE.BoxGeometry(6, 0.2, 100);
+            const trackMat = new THREE.MeshStandardMaterial({ color: 0x111122 });
+            track = new THREE.Mesh(trackGeo, trackMat);
+            track.position.set(0, -0.1, -40);
+            track.receiveShadow = true;
+            scene.add(track);
+
+            setupTouchControls();
+            window.addEventListener('resize', onWindowResize, false);
+            animate();
+        }
+
+        function buildAmongUsCrewmate() {
+            playerGroup = new THREE.Group();
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xc51111, roughness: 0.3 });
+            const visorMat = new THREE.MeshStandardMaterial({ color: 0x9aceff, roughness: 0.1, metalness: 0.5 });
+
+            const bodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.9, 16);
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.8;
+            playerGroup.add(body);
+
+            const visorGeo = new THREE.BoxGeometry(0.5, 0.28, 0.25);
+            const visor = new THREE.Mesh(visorGeo, visorMat);
+            visor.position.set(0, 1.1, 0.3);
+            playerGroup.add(visor);
+
+            playerGroup.rotation.y = Math.PI;
+            scene.add(playerGroup);
+        }
+
+        function setupTouchControls() {
+            window.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; });
+            window.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                if (touchEndX < touchStartX - 30) moveLane(-1);
+                if (touchEndX > touchStartX + 30) moveLane(1);
+            });
+        }
+
+        function moveLane(dir) {
+            currentLane = Math.max(-1, Math.min(1, currentLane + dir));
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (playerGroup) {
+                // Smooth lane switching logic
+                playerGroup.position.x += (currentLane * 1.8 - playerGroup.position.x) * 0.1;
+                playerGroup.position.y = Math.sin(Date.now() * 0.005) * 0.05 + 0.05;
+            }
+            renderer.render(scene, camera);
+        }
+
+        // Inline Service Worker Registration for Offline Play
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                const CACHE_NAME = 'vr-studio-cyber-surfer-v1';
+                self.addEventListener('install', (e) => {
+                    e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(['./'])));
+                });
+                self.addEventListener('fetch', (e) => {
+                    e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
+                });
+            `;
+            const blob = new Blob([swCode], { type: 'text/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl);
+        }
+    </script>
+</body>
+</html>
